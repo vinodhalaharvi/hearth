@@ -73,6 +73,35 @@ pub fn reading_json(device: &str, uptime_ms: u64, value: impl core::fmt::Display
     }
 }
 
+/// Home Assistant MQTT-discovery prefix (HA's default). Retained config topics
+/// under this prefix make HA auto-create a device + entities per node.
+pub const HA_DISCOVERY_PREFIX: &str = "homeassistant";
+
+/// Board identity for the Home Assistant device card. Model + manufacturer are
+/// board-specific, so each firmware supplies them; everything else about
+/// discovery (topics, entities, availability) lives here as part of the
+/// contract, so every node advertises itself the same way.
+pub struct DeviceInfo<'a> {
+    pub manufacturer: &'a str,
+    pub model: &'a str,
+    pub sw_version: &'a str,
+}
+
+/// HA metadata for one published metric. Adding a row here (and publishing that
+/// metric in the loop) is all it takes for a new reading to appear in HA.
+struct MetricMeta {
+    key: &'static str,
+    name: &'static str,
+    unit: &'static str,
+    device_class: &'static str,
+}
+
+/// The metrics every node currently publishes (kept in step with the loop).
+const HA_METRICS: &[MetricMeta] = &[
+    MetricMeta { key: "rssi", name: "RSSI",      unit: "dBm", device_class: "signal_strength" },
+    MetricMeta { key: "heap", name: "Free heap", unit: "B",   device_class: "data_size" },
+];
+
 /// A connected node: owns the MQTT client and knows its own identity/topics.
 ///
 /// Construction sets a Last-Will on the status topic so the broker publishes a
@@ -138,6 +167,67 @@ impl Node {
         let payload = reading_json(&self.device, uptime_ms, value, unit);
         self.client
             .publish(&topic, READING_QOS, false, payload.as_bytes())?;
+        Ok(())
+    }
+
+    /// Announce this node to Home Assistant via retained MQTT discovery: one HA
+    /// device (grouping every entity) with a sensor per metric plus an
+    /// online/offline connectivity entity. Sensor availability is tied to the
+    /// LWT status topic, so entities show "unavailable" the instant the node
+    /// drops. Call once, right after connecting.
+    pub fn announce_ha_discovery(&mut self, dev: &DeviceInfo) -> Result<()> {
+        let device_uid = format!("hearth-{}", self.device);
+        let status_topic = self.topics.status();
+
+        // Shared "device" block — puts every entity on one HA device card.
+        let device = format!(
+            r#""device":{{"identifiers":["{uid}"],"name":"hearth {node}","manufacturer":"{mfr}","model":"{model}","sw_version":"{sw}"}}"#,
+            uid = device_uid,
+            node = self.device,
+            mfr = dev.manufacturer,
+            model = dev.model,
+            sw = dev.sw_version,
+        );
+
+        // A sensor per metric: value pulled from the JSON payload, availability
+        // from the retained status topic.
+        for m in HA_METRICS {
+            let config_topic =
+                format!("{HA_DISCOVERY_PREFIX}/sensor/{device_uid}/{}/config", m.key);
+            let payload = format!(
+                r#"{{"name":"{name}","unique_id":"{uid}-{key}","state_topic":"{state}","value_template":"{tmpl}","unit_of_measurement":"{unit}","device_class":"{dc}","state_class":"measurement","entity_category":"diagnostic","availability_topic":"{status}","payload_available":"online","payload_not_available":"offline",{device}}}"#,
+                name = m.name,
+                uid = device_uid,
+                key = m.key,
+                state = self.topics.metric(m.key),
+                tmpl = "{{ value_json.value }}",
+                unit = m.unit,
+                dc = m.device_class,
+                status = status_topic,
+                device = device,
+            );
+            self.client
+                .publish(&config_topic, QoS::AtLeastOnce, true, payload.as_bytes())?;
+        }
+
+        // Connectivity entity reads the retained status topic directly
+        // (online -> on, offline -> off). Deliberately no availability here, or
+        // it would hide its own "disconnected" state when the LWT fires.
+        let status_config_topic =
+            format!("{HA_DISCOVERY_PREFIX}/binary_sensor/{device_uid}/status/config");
+        let status_payload = format!(
+            r#"{{"name":"Status","unique_id":"{uid}-status","state_topic":"{status}","payload_on":"online","payload_off":"offline","device_class":"connectivity","entity_category":"diagnostic",{device}}}"#,
+            uid = device_uid,
+            status = status_topic,
+            device = device,
+        );
+        self.client
+            .publish(&status_config_topic, QoS::AtLeastOnce, true, status_payload.as_bytes())?;
+
+        log::info!(
+            "announced Home Assistant discovery: {} sensors + status",
+            HA_METRICS.len()
+        );
         Ok(())
     }
 }

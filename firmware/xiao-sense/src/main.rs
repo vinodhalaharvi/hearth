@@ -18,7 +18,7 @@ use esp_idf_svc::nvs::EspDefaultNvsPartition;
 use esp_idf_svc::wifi::{BlockingWifi, ClientConfiguration, Configuration, EspWifi};
 use log::info;
 
-use hearth_shared::mqtt::{MqttSettings, Node};
+use hearth_shared::mqtt::{DeviceInfo, MqttSettings, Node};
 
 // --- config: injected from .env at build time, with safe fallbacks ---
 const SYSTEM: &str = "hearth";
@@ -29,6 +29,10 @@ const MQTT_PORT: &str = match option_env!("MQTT_PORT") { Some(v) => v, None => "
 const MQTT_USER: &str = match option_env!("MQTT_USER") { Some(v) => v, None => "" };
 const MQTT_PASS: &str = match option_env!("MQTT_PASS") { Some(v) => v, None => "" };
 const NODE_ID: &str = match option_env!("NODE_ID") { Some(v) => v, None => "xiao-sense-01" };
+
+// Board identity for the Home Assistant device card (board-specific).
+const BOARD_MFR: &str = "Seeed Studio";
+const BOARD_MODEL: &str = "XIAO ESP32-S3 Sense";
 
 fn main() -> Result<()> {
     esp_idf_svc::sys::link_patches();
@@ -55,6 +59,11 @@ fn main() -> Result<()> {
     let settings = MqttSettings::from_parts(MQTT_HOST, MQTT_PORT, MQTT_USER, MQTT_PASS, NODE_ID);
     let mut node = Node::connect(&settings, SYSTEM, NODE_ID)?;
     node.publish_status_online()?;
+    node.announce_ha_discovery(&DeviceInfo {
+        manufacturer: BOARD_MFR,
+        model: BOARD_MODEL,
+        sw_version: env!("CARGO_PKG_VERSION"),
+    })?;
     info!("mqtt connected as '{NODE_ID}'; publishing under {SYSTEM}/{NODE_ID}/");
 
     // --- publish loop ---
