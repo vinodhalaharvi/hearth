@@ -9,12 +9,12 @@ every node speaks the same wire format.
 
 | Crate | Board | Node id | Board-specifics |
 |-------|-------|---------|-----------------|
-| `esp32s3-sensor` | ESP32-S3-DevKitC | `esp32s3-01` | LED GPIO48; UART-bridge serial console |
-| `xiao-sense` | Seeed XIAO ESP32-S3 Sense | `xiao-sense-01` | LED GPIO21 (active-low); native USB Serial/JTAG console; 8 MB OPI PSRAM |
+| `esp32s3-sensor` | ESP32-S3-DevKitC | `esp32s3-<mac>` | LED GPIO48; UART-bridge serial console |
+| `xiao-sense` | Seeed XIAO ESP32-S3 Sense | `xiao-<mac>` | LED GPIO21 (active-low); native USB Serial/JTAG console; 8 MB OPI PSRAM |
 
 Both crates run the **same** telemetry code and publish through
-`hearth_shared::mqtt` — the only differences are the crate name, the `NODE_ID`
-fallback (the board's identity, in its `src/main.rs`), and board-specific
+`hearth_shared::mqtt` — the only differences are the crate name, the `NODE_PREFIX`
+(board family; the node id is chip-derived), and board-specific
 pin/USB/PSRAM config. First light for any node is: WiFi connect, MQTT connect
 with LWT, and `rssi` + `heap` published under `hearth/<node-id>/…`.
 
@@ -46,10 +46,10 @@ with LWT, and `rssi` + `heap` published under `hearth/<node-id>/…`.
    Use `hearth_shared::mqtt` for transport + topics so the node honors the
    contract automatically. Put any new sensor driver in `shared/src/drivers.rs`
    so other boards get it too.
-6. **Give it a unique `NODE_ID`** — set the fallback in the crate's
-   `src/main.rs` (`const NODE_ID … None => "<node>-01"`). Identity lives with
-   the firmware, not `.env`, so one shared `.env` (WiFi + broker) serves every
-   board without topic collisions.
+6. **Identity is automatic.** With no `NODE_ID` set, each board self-names as
+   `<NODE_PREFIX>-<chip-mac-suffix>` (unique per physical chip), so a second
+   board of the same type never collides. Set `NODE_PREFIX` per crate (board
+   family) and export `NODE_ID` only to give one board a stable friendly name.
 
 That's the whole ceremony: a node is a folder that reuses `shared/` and adds one
 line to the workspace. No board folders are pre-created — add them when the board

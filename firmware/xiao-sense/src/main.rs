@@ -18,7 +18,7 @@ use esp_idf_svc::nvs::EspDefaultNvsPartition;
 use esp_idf_svc::wifi::{BlockingWifi, ClientConfiguration, Configuration, EspWifi};
 use log::info;
 
-use hearth_shared::mqtt::{DeviceInfo, MqttSettings, Node};
+use hearth_shared::mqtt::{resolve_node_id, DeviceInfo, MqttSettings, Node};
 
 // --- config: injected from .env at build time, with safe fallbacks ---
 const SYSTEM: &str = "hearth";
@@ -28,7 +28,10 @@ const MQTT_HOST: &str = match option_env!("MQTT_HOST") { Some(v) => v, None => "
 const MQTT_PORT: &str = match option_env!("MQTT_PORT") { Some(v) => v, None => "1883" };
 const MQTT_USER: &str = match option_env!("MQTT_USER") { Some(v) => v, None => "" };
 const MQTT_PASS: &str = match option_env!("MQTT_PASS") { Some(v) => v, None => "" };
-const NODE_ID: &str = match option_env!("NODE_ID") { Some(v) => v, None => "xiao-sense-01" };
+// Node identity: a non-empty NODE_ID (exported, e.g. via .env) names a board;
+// with none set it self-names as `<NODE_PREFIX>-<chip-mac-suffix>`, unique per chip.
+const NODE_ID_OVERRIDE: Option<&str> = option_env!("NODE_ID");
+const NODE_PREFIX: &str = "xiao";
 
 // Board identity for the Home Assistant device card (board-specific).
 const BOARD_MFR: &str = "Seeed Studio";
@@ -37,6 +40,9 @@ const BOARD_MODEL: &str = "XIAO ESP32-S3 Sense";
 fn main() -> Result<()> {
     esp_idf_svc::sys::link_patches();
     esp_idf_svc::log::EspLogger::initialize_default();
+
+    let node_id = resolve_node_id(NODE_ID_OVERRIDE, NODE_PREFIX);
+    info!("node id: {node_id}");
 
     let peripherals = Peripherals::take()?;
     let sysloop = EspSystemEventLoop::take()?;
@@ -56,15 +62,15 @@ fn main() -> Result<()> {
     info!("wifi up, ip: {}", ip.ip);
 
     // --- MQTT ---
-    let settings = MqttSettings::from_parts(MQTT_HOST, MQTT_PORT, MQTT_USER, MQTT_PASS, NODE_ID);
-    let mut node = Node::connect(&settings, SYSTEM, NODE_ID)?;
+    let settings = MqttSettings::from_parts(MQTT_HOST, MQTT_PORT, MQTT_USER, MQTT_PASS, &node_id);
+    let mut node = Node::connect(&settings, SYSTEM, &node_id)?;
     node.publish_status_online()?;
     node.announce_ha_discovery(&DeviceInfo {
         manufacturer: BOARD_MFR,
         model: BOARD_MODEL,
         sw_version: env!("CARGO_PKG_VERSION"),
     })?;
-    info!("mqtt connected as '{NODE_ID}'; publishing under {SYSTEM}/{NODE_ID}/");
+    info!("mqtt connected as '{node_id}'; publishing under {SYSTEM}/{node_id}/");
 
     // --- publish loop ---
     let start = Instant::now();

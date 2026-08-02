@@ -42,6 +42,27 @@ impl MqttSettings {
     }
 }
 
+/// The last three bytes of the factory MAC as hex — a stable, chip-unique
+/// suffix (e.g. `"3c9a1f"`). Read straight from eFuse; needs no WiFi/NVS init.
+pub fn chip_id_suffix() -> String {
+    let mut mac = [0u8; 6];
+    unsafe {
+        esp_idf_svc::sys::esp_efuse_mac_get_default(mac.as_mut_ptr());
+    }
+    format!("{:02x}{:02x}{:02x}", mac[3], mac[4], mac[5])
+}
+
+/// Resolve this board's node id. A non-empty explicit id (from `.env`/env) wins,
+/// so a board can have a meaningful, stable name; otherwise fall back to
+/// `{prefix}-{chip_id_suffix}`, unique per physical chip. This is what stops a
+/// freshly-flashed second board of the same type from colliding on one id.
+pub fn resolve_node_id(explicit: Option<&str>, prefix: &str) -> String {
+    match explicit {
+        Some(id) if !id.is_empty() => id.to_string(),
+        _ => format!("{prefix}-{}", chip_id_suffix()),
+    }
+}
+
 /// The per-node topic set, rooted at the system name (the MQTT topic root).
 pub struct Topics {
     base: String,
