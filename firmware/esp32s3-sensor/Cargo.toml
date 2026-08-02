@@ -10,7 +10,7 @@ name = "esp32s3-sensor"
 harness = false
 
 [features]
-default = ["std", "embassy", "esp-idf-svc/native"]
+default = ["std", "esp-idf-svc/native"]
 pio = ["esp-idf-svc/pio"]
 std = ["alloc", "esp-idf-svc/binstart", "esp-idf-svc/std"]
 alloc = ["esp-idf-svc/alloc"]
