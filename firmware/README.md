@@ -5,6 +5,19 @@ root. Nodes share code via the `hearth-shared` crate (a path dependency) — mos
 importantly its `mqtt` module, which owns the topic/payload/LWT contract so
 every node speaks the same wire format.
 
+## Targets
+
+| Crate | Board | Node id | Board-specifics |
+|-------|-------|---------|-----------------|
+| `esp32s3-sensor` | ESP32-S3-DevKitC | `esp32s3-01` | LED GPIO48; UART-bridge serial console |
+| `xiao-sense` | Seeed XIAO ESP32-S3 Sense | `xiao-sense-01` | LED GPIO21 (active-low); native USB Serial/JTAG console; 8 MB OPI PSRAM |
+
+Both crates run the **same** telemetry code and publish through
+`hearth_shared::mqtt` — the only differences are the crate name, the `NODE_ID`
+fallback (the board's identity, in its `src/main.rs`), and board-specific
+pin/USB/PSRAM config. First light for any node is: WiFi connect, MQTT connect
+with LWT, and `rssi` + `heap` published under `hearth/<node-id>/…`.
+
 ## How to add a node
 
 1. **Copy an existing node** as a starting point:
@@ -33,7 +46,10 @@ every node speaks the same wire format.
    Use `hearth_shared::mqtt` for transport + topics so the node honors the
    contract automatically. Put any new sensor driver in `shared/src/drivers.rs`
    so other boards get it too.
-6. **Give it a unique `NODE_ID`** (via `.env`) so its topics don't collide.
+6. **Give it a unique `NODE_ID`** — set the fallback in the crate's
+   `src/main.rs` (`const NODE_ID … None => "<node>-01"`). Identity lives with
+   the firmware, not `.env`, so one shared `.env` (WiFi + broker) serves every
+   board without topic collisions.
 
 That's the whole ceremony: a node is a folder that reuses `shared/` and adds one
 line to the workspace. No board folders are pre-created — add them when the board
@@ -47,4 +63,11 @@ node's directory** — or use the root `Makefile` targets, which `cd` for you:
 ```bash
 cd firmware/esp32s3-sensor
 cargo run            # build + flash + monitor (via the configured runner)
+```
+
+Or drive it from the repo root with `NODE=`:
+
+```bash
+make run NODE=xiao-sense     # build + flash + monitor the XIAO (omit NODE for esp32s3-sensor)
+make sub                     # watch hearth/# — both nodes at once
 ```

@@ -1,0 +1,15 @@
+# Seeed XIAO ESP32-S3 (Sense): 8 MB octal (OPI) PSRAM.
+CONFIG_ESP32S3_SPIRAM_SUPPORT=y
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_MODE_OCT=y
+CONFIG_SPIRAM_SPEED_80M=y
+
+# Room for std + networking on the main task.
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8000
+
+# 1 kHz tick so std sleeps are granular.
+CONFIG_FREERTOS_HZ=1000
+
+# XIAO has no USB-UART bridge — route the console to the native USB
+# Serial/JTAG so boot logs and info! output appear on `espflash monitor`.
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y

@@ -8,6 +8,7 @@ resolver = "2"
 members = [
     "shared",
     "firmware/esp32s3-sensor",
+    "firmware/xiao-sense",
 ]
 
 # Profiles must live at the workspace root (Cargo ignores them in members).

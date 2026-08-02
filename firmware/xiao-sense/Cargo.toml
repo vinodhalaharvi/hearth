@@ -1,0 +1,28 @@
+[package]
+name = "xiao-sense"
+version = "0.1.0"
+edition = "2021"
+resolver = "2"
+rust-version = "1.77"
+
+[[bin]]
+name = "xiao-sense"
+harness = false
+
+[features]
+default = ["std", "esp-idf-svc/native"]
+pio = ["esp-idf-svc/pio"]
+std = ["alloc", "esp-idf-svc/binstart", "esp-idf-svc/std"]
+alloc = ["esp-idf-svc/alloc"]
+nightly = ["esp-idf-svc/nightly"]
+experimental = ["esp-idf-svc/experimental"]
+embassy = ["esp-idf-svc/embassy-sync", "esp-idf-svc/critical-section", "esp-idf-svc/embassy-time-driver"]
+
+[dependencies]
+hearth-shared = { path = "../../shared" }
+log = "0.4"
+anyhow = "1"
+esp-idf-svc = { version = "0.52", default-features = false }
+
+[build-dependencies]
+embuild = "0.33"
