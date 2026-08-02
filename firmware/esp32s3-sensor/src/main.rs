@@ -22,13 +22,13 @@ use hearth_shared::mqtt::{MqttSettings, Node};
 
 // --- config: injected from .env at build time, with safe fallbacks ---
 const SYSTEM: &str = "hearth";
-const WIFI_SSID: &str = option_env!("WIFI_SSID").unwrap_or("changeme-ssid");
-const WIFI_PASS: &str = option_env!("WIFI_PASS").unwrap_or("changeme-pass");
-const MQTT_HOST: &str = option_env!("MQTT_HOST").unwrap_or("192.168.68.139");
-const MQTT_PORT: &str = option_env!("MQTT_PORT").unwrap_or("1883");
-const MQTT_USER: &str = option_env!("MQTT_USER").unwrap_or("");
-const MQTT_PASS: &str = option_env!("MQTT_PASS").unwrap_or("");
-const NODE_ID: &str = option_env!("NODE_ID").unwrap_or("esp32s3-01");
+const WIFI_SSID: &str = match option_env!("WIFI_SSID") { Some(v) => v, None => "changeme-ssid" };
+const WIFI_PASS: &str = match option_env!("WIFI_PASS") { Some(v) => v, None => "changeme-pass" };
+const MQTT_HOST: &str = match option_env!("MQTT_HOST") { Some(v) => v, None => "192.168.68.139" };
+const MQTT_PORT: &str = match option_env!("MQTT_PORT") { Some(v) => v, None => "1883" };
+const MQTT_USER: &str = match option_env!("MQTT_USER") { Some(v) => v, None => "" };
+const MQTT_PASS: &str = match option_env!("MQTT_PASS") { Some(v) => v, None => "" };
+const NODE_ID: &str = match option_env!("NODE_ID") { Some(v) => v, None => "esp32s3-01" };
 
 fn main() -> Result<()> {
     esp_idf_svc::sys::link_patches();
