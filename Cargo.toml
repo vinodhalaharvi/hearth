@@ -1,0 +1,20 @@
+# hearth — multi-device embedded system workspace.
+# Nodes publish to MQTT; consumers subscribe independently (see README.md).
+#
+# A future node joins by adding its crate path to `members` below — that's the
+# whole ceremony. Shared code lives in `shared/`.
+[workspace]
+resolver = "2"
+members = [
+    "shared",
+    "firmware/esp32s3-sensor",
+]
+
+# Profiles must live at the workspace root (Cargo ignores them in members).
+# esp-idf std builds: keep std, optimize for size.
+[profile.release]
+opt-level = "s"
+
+[profile.dev]
+debug = true
+opt-level = "z"

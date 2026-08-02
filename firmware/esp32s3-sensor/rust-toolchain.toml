@@ -1,0 +1,3 @@
+[toolchain]
+# Xtensa LX7 needs the espup-installed "esp" toolchain (see docs/ / README).
+channel = "esp"

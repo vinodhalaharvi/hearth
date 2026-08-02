@@ -1,0 +1,12 @@
+[package]
+name = "hearth-shared"
+version = "0.1.0"
+edition = "2021"
+description = "Shared code for hearth ESP32-family firmware nodes: MQTT transport/contract, drivers, manifest tooling."
+
+[dependencies]
+# Feature selection is driven by the binary (firmware) crate, per the esp-idf
+# convention; this lib just uses the std MQTT client the firmware enables.
+esp-idf-svc = { version = "0.49", default-features = false }
+log = "0.4"
+anyhow = "1"

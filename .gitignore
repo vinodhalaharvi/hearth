@@ -1,0 +1,21 @@
+# Rust / Cargo
+/target/
+**/target/
+**/.embuild/
+**/dependencies.lock
+**/sdkconfig.old
+
+# Environment & secrets — never commit real values
+.env
+secrets.h
+secrets*
+*.pem
+*.key
+
+# Arduino build artifacts (legacy; in case a sketch is ever dropped in)
+/firmware/**/build/
+*.bin
+*.elf
+
+# OS junk
+.DS_Store

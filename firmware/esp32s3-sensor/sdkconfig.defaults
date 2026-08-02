@@ -1,0 +1,11 @@
+# ESP32-S3 with octal (OPI) PSRAM — devkit-C and most S3 modules.
+CONFIG_ESP32S3_SPIRAM_SUPPORT=y
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_MODE_OCT=y
+CONFIG_SPIRAM_SPEED_80M=y
+
+# Room for std + networking on the main task.
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8000
+
+# 1 kHz tick so std sleeps are granular.
+CONFIG_FREERTOS_HZ=1000
