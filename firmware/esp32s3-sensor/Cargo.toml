@@ -22,7 +22,7 @@ embassy = ["esp-idf-svc/embassy-sync", "esp-idf-svc/critical-section", "esp-idf-
 hearth-shared = { path = "../../shared" }
 log = "0.4"
 anyhow = "1"
-esp-idf-svc = { version = "0.49", default-features = false }
+esp-idf-svc = { version = "0.52", default-features = false }
 
 [build-dependencies]
-embuild = "0.32"
+embuild = "0.33"
