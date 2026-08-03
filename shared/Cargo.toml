@@ -2,11 +2,18 @@
 name = "hearth-shared"
 version = "0.1.0"
 edition = "2021"
-description = "Shared code for hearth ESP32-family firmware nodes: MQTT transport/contract, drivers, manifest tooling."
+description = "Shared code for hearth ESP32-family firmware: MQTT transport/contract, BLE command peripheral, command envelope, drivers, manifest tooling."
+
+[features]
+# Firmware selects the subsystem it needs. `command` is always available.
+default = ["mqtt"]
+mqtt = []                     # gates the mqtt module (uses esp-idf-svc's MQTT client)
+ble = ["dep:esp32-nimble"]    # gates the ble module (NimBLE peripheral)
 
 [dependencies]
-# Feature selection is driven by the binary (firmware) crate, per the esp-idf
-# convention; this lib just uses the std MQTT client the firmware enables.
+# Feature selection for esp-idf-svc itself is driven by the firmware crate.
 esp-idf-svc = { version = "0.52", default-features = false }
 log = "0.4"
 anyhow = "1"
+# BLE (NimBLE). 0.12 targets esp-idf-svc 0.52 — matches this workspace exactly.
+esp32-nimble = { version = "0.12", optional = true }

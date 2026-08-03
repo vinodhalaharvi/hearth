@@ -1,0 +1,16 @@
+[build]
+target = "xtensa-esp32s3-espidf"
+
+[target.xtensa-esp32s3-espidf]
+linker = "ldproxy"
+# `cargo run` flashes over USB and opens the serial monitor.
+runner = "espflash flash --monitor"
+rustflags = ["--cfg", "espidf_time64"]
+
+[unstable]
+build-std = ["std", "panic_abort"]
+
+[env]
+MCU = "esp32s3"
+# Pin esp-idf for reproducible builds.
+ESP_IDF_VERSION = "v5.2.2"

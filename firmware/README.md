@@ -11,6 +11,7 @@ every node speaks the same wire format.
 |-------|-------|---------|-----------------|
 | `esp32s3-sensor` | ESP32-S3-DevKitC | `esp32s3-<mac>` | LED GPIO48; UART-bridge serial console |
 | `xiao-sense` | Seeed XIAO ESP32-S3 Sense | `xiao-<mac>` | LED GPIO21 (active-low); native USB Serial/JTAG console; 8 MB OPI PSRAM |
+| `ble-control` | ESP32-S3-DevKitC-1 | — (BLE, not MQTT) | **Separate subsystem:** BLE GATT control of the onboard WS2812 (GPIO48) via `hearth_shared::{ble,command}`. No WiFi/MQTT. See its own README. |
 
 Both crates run the **same** telemetry code and publish through
 `hearth_shared::mqtt` — the only differences are the crate name, the `NODE_PREFIX`

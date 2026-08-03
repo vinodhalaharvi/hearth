@@ -1,0 +1,32 @@
+[package]
+name = "ble-control"
+version = "0.1.0"
+edition = "2021"
+resolver = "2"
+rust-version = "1.77"
+
+[[bin]]
+name = "ble-control"
+harness = false
+
+[features]
+default = ["std", "esp-idf-svc/native"]
+pio = ["esp-idf-svc/pio"]
+std = ["alloc", "esp-idf-svc/binstart", "esp-idf-svc/std"]
+alloc = ["esp-idf-svc/alloc"]
+nightly = ["esp-idf-svc/nightly"]
+experimental = ["esp-idf-svc/experimental"]
+
+[dependencies]
+# Reusable BLE peripheral + command envelope. `ble` feature pulls esp32-nimble;
+# default-features=false so this BLE node does NOT compile the MQTT module.
+hearth-shared = { path = "../../shared", default-features = false, features = ["ble"] }
+log = "0.4"
+anyhow = "1"
+esp-idf-svc = { version = "0.52", default-features = false }
+# Onboard WS2812 RGB LED over RMT. 0.14 targets esp-idf-hal 0.46 (matches).
+ws2812-esp32-rmt-driver = { version = "0.14", features = ["smart-leds-trait"] }
+smart-leds = "0.4"
+
+[build-dependencies]
+embuild = "0.33"
